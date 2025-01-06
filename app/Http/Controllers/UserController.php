@@ -2,15 +2,25 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Role;
 use App\Models\User;
 use App\Models\UserProfile;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 
 class UserController extends Controller
 {
     public function index()
     {
-        $users = User::all();
+        $users = User::query(10);
+        $users->when(request()->q, function ($query, $q) {
+            $query->where(function ($qry) use ($q) {
+                $qry->where('name', 'like', '%' . $q . '%')
+                    ->orWhere('email', 'like', '%' . $q . '%');
+            });
+        });
+
+        $users = $users->paginate();
         $d = ['users' => $users];
 
         return view('users.index', $d);
@@ -38,12 +48,21 @@ class UserController extends Controller
 
     public function edit(User $user)
     {
+        Gate::authorize('edit', User::class);
         $user->load('profile', 'interests');
-        return view('users.edit', ['user' => $user]);
+        $roles = Role::all();
+
+        $d = [
+            'user' => $user,
+            'roles' => $roles
+        ];
+
+        return view('users.edit', $d);
     }
 
     public function update(User $user)
     {
+        Gate::authorize('edit', User::class);
         $inputs = request()->validate([
             'name' => 'required',
             'email' => 'required|email',
@@ -58,6 +77,7 @@ class UserController extends Controller
 
     public function updateProfile(User $user)
     {
+        Gate::authorize('edit', User::class);
         $inputs = request()->validate([
             'type' => 'required',
             'address' => 'nullable',
@@ -72,6 +92,8 @@ class UserController extends Controller
 
     public function updateInterests(User $user)
     {
+        Gate::authorize('edit', User::class);
+
         $inputs = request()->validate([
             'interests' => 'nullable|array',
         ]);
@@ -85,8 +107,23 @@ class UserController extends Controller
         return back()->with('status', 'Dados editado com sucesso!');
     }
 
+    public function updateRoles(User $user)
+    {
+        Gate::authorize('edit', User::class);
+
+        $inputs = request()->validate([
+            'roles' => 'required|array',
+        ]);
+
+        $user->roles()->sync($inputs['roles']);
+
+        return back()->with('status', 'Dados editado com sucesso!');
+    }
+
     public function delete(User $user)
     {
+        Gate::authorize('delete', User::class);
+
         $user->delete();
 
         return back()->with('status', 'Usuário deletado com sucesso!');

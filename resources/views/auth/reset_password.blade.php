@@ -13,7 +13,7 @@
                 <input type="hidden" name="token" value="{{request()->token}}">
                 <div class="input-group mb-3">
                     <div class="input-group-text"><span class="bi bi-envelope"></span></div>
-                    <input type="email" name="email" class="form-control  @error('email') is-invalid @enderror" placeholder="Email" value="{{request->email}}" />
+                    <input type="email" name="email" class="form-control  @error('email') is-invalid @enderror" placeholder="Email" value="{{request()->email}}" />
                     @error('email')
                     <div class="invalid-feedback">
                         {{$message}}
